@@ -4,6 +4,7 @@ import pygame
 import messagebox
 import snake
 import food
+import AI
 
 class Game():
     def __init__(self):
@@ -28,23 +29,6 @@ class Game():
         self.run = True
         self.clock = pygame.time.Clock()
         self.bg_color = (0,0,0)
-
-        if not os.path.exists('AI.txt'):
-            with open('AI.txt', 'w') as w:
-                w.write('False')
-            self.AI = False
-
-        else:
-            with open('AI.txt', 'r') as w:
-                AI = w.read()
-
-            if AI.lower().strip() in ['false', 'true']:
-                self.AI = {'false':False, 'true':True}[AI.lower().strip()]
-            else:
-                with open('AI.txt', 'w') as w:
-                    w.write('False')
-
-                self.AI = False
 
         self.reset_game()
 
@@ -72,34 +56,7 @@ class Game():
                     self.direction = snake.SOUTH
 
             else:
-                if self.snake.headY == self.food.pos[1]:
-                    if not self.snake.collision_upon_move(snake.WEST):
-                        self.direction = snake.WEST
-                    else:
-                        if not self.snake.collision_upon_move(snake.NORTH):
-                            self.direction = snake.NORTH
-                        elif not self.snake.collision_upon_move(snake.SOUTH):
-                            self.direction = snake.SOUTH
-                        elif not self.snake.collision_upon_move(snake.EAST):
-                            self.direction = snake.EAST
-                        elif not self.snake.collision_upon_move(snake.WEST):
-                            self.direction = snake.WEST
-
-                else:
-                    if not self.snake.collision_upon_move(snake.NORTH):
-                        self.direction = snake.NORTH
-                    else:
-                        if not self.snake.collision_upon_move(snake.WEST):
-                            self.direction = snake.WEST
-                        else:
-                            if not self.snake.collision_upon_move(snake.EAST):
-                                self.direction = snake.EAST
-                            elif not self.snake.collision_upon_move(snake.WEST):
-                                self.direction = snake.WEST
-                            elif not self.snake.collision_upon_move(snake.SOUTH):
-                                self.direction = snake.SOUTH
-                            elif not self.snake.collision_upon_move(snake.NORTH):
-                                self.direction = snake.NORTH
+                self.direction = AI.get_best_direction(self.snake, self.food)
 
             self.window.fill(self.bg_color)
 
@@ -119,7 +76,7 @@ class Game():
         boxes = []
         for y in range(h):
             for x in range(w):
-                boxes.append([x*35, y*35])
+                boxes.append([x*self.boxes_width, y*self.boxes_height])
 
         return boxes
 
@@ -140,8 +97,6 @@ class Game():
                 w.write(b'0')
             high_score = 0
 
-        print(self.direction)
-
         if high_score < self.snake.bodyLen:
             messagebox.showinfo('New High Score', f'Old High Score: {high_score}\nNew High Score/Current Score: {self.snake.bodyLen}')
 
@@ -152,15 +107,18 @@ class Game():
         else:
             messagebox.showinfo('Game Over', f'Current Score: {self.snake.bodyLen}\nHighest Score: {high_score}')
 
-        self.reset_game()
+        if messagebox.askyesno('Restart', "Would You Like To Restart?"):
+            self.reset_game()
+        else:
+            self.run = False
 
     def reset_game(self):
         self.direction = snake.NORTH
-
         x, y = random.choice(self.BOXES)
         self.snake = snake.Snake(headX=x, headY=y, color=self.snake_body_color, height=self.boxes_height, width=self.boxes_width, screenheight=self.HEIGHT, screenwidth=self.WIDTH)
         self.food = food.Food(self.food_color, self.boxes_height, self.boxes_width, self.BOXES)
         self.food.generate((self.snake.headX, self.snake.headY), self.snake.bodyLen, self.snake.logs)
+        self.AI = messagebox.askyesno('AI', 'Would You Like To Use The AI?')
 
 if __name__ == '__main__':
     Game()

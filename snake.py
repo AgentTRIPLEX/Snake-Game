@@ -26,7 +26,7 @@ class Snake():
         if mode == COLOR:
             pygame.draw.rect(window, arg, (self.headX, self.headY, self.width, self.height))
         elif mode == PIC:
-            window.blit(pygame.image.load(arg), (self.headX, self.headY))
+            window.blit(pygame.transform.scale(pygame.image.load(arg), (self.height, self.width)), (self.headX, self.headY))
 
         for f in range(1, self.bodyLen):
             x, y = self.logs[len(self.logs) - f]
@@ -93,3 +93,35 @@ class Snake():
     def collision_upon_move(self, direction):
         headX, headY = self.pos_upon_move(direction)
         return [headX, headY] in [list(self.logs[len(self.logs) - f]) for f in range(1, self.bodyLen)]
+
+    def moves_without_collision(self, direction):
+        iter = 0
+        headX = self.headX
+        headY = self.headY
+
+        while 1:
+            if direction == NORTH:
+                headY -= self.height
+            elif direction == SOUTH:
+                headY += self.height
+            elif direction == EAST:
+                headX += self.width
+            elif direction == WEST:
+                headX -= self.width
+
+            if headY < 0:
+                headY = self.screenheight - self.height
+            if headY > (self.screenheight - self.height):
+                headY = 0
+            if headX < 0:
+                headX = self.screenwidth - self.width
+            if headX > (self.screenwidth - self.width):
+                headX = 0
+
+            if [headX, headY] in [list(self.logs[len(self.logs) - f]) for f in range(1, self.bodyLen)]:
+                return iter
+            else:
+                iter += 1
+
+            if [headX, headY] == [self.headX, self.headY]:
+                return iter
