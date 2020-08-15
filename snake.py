@@ -59,6 +59,9 @@ class Snake():
                 self.speed += 1
                 self.bodyLen += 1
                 food.generate((self.headX, self.headY), self.bodyLen, self.logs)
+                return True
+
+        return False
 
     def check_head_collision(self):
         return [self.headX, self.headY] in [list(self.logs[len(self.logs) - f]) for f in range(1, self.bodyLen)]
@@ -86,3 +89,7 @@ class Snake():
             headX = 0
 
         return headX, headY
+
+    def collision_upon_move(self, direction):
+        headX, headY = self.pos_upon_move(direction)
+        return [headX, headY] in [list(self.logs[len(self.logs) - f]) for f in range(1, self.bodyLen)]
