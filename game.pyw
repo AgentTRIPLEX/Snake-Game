@@ -13,7 +13,7 @@ class Game():
         self.boxes_width = 35
         self.grid_height = 20
         self.grid_width = 20
-        self.food_color = (0, 0, 255)
+        self.food_color = (212, 175, 55)
         self.snake_body_color = (0, 255, 0)
         self.snake_head_mode = snake.PIC
         self.snake_head_arg = 'head.png'
