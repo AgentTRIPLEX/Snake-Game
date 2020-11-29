@@ -62,7 +62,7 @@ def get_move(snake, food, grid, hardcore=True):
     hamiltonian_pos = x, y
     path = get_path(grid, snake, food)
 
-    if ((snake.body_len < (len(grid.grid) // 10)) or snake.check_collision_upon_move(get_direction(snake.head_pos, hamiltonian_pos))) and (len(path) > 0):
+    if ((snake.body_len < (len(grid.grid) // 20)) or snake.check_collision_upon_move(get_direction(snake.head_pos, hamiltonian_pos))) and (len(path) > 0):
         if len(path) > 0:
             direction = get_direction(snake.head_pos, path[-1])
         else:
