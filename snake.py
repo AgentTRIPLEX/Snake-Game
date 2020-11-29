@@ -1,127 +1,162 @@
 import pygame
+import random
+from directions import *
+import graphics
 
-NORTH = 'north'
-SOUTH = 'south'
-EAST = 'east'
-WEST = 'west'
-PIC = 'pic'
-COLOR = 'color'
+class Snake:
+    def __init__(self, *args, **kwargs):
+        self.grid = kwargs["grid"]
+        self.head_arg = kwargs["head_arg"]
+        self.head_type = kwargs["head_type"]
+        self.body_color = kwargs["body_color"]
+        self.speed = kwargs["speed"]
 
-class Snake():
-    def __init__(self, **kwargs):
-        self.headX = kwargs['headX']
-        self.headY = kwargs['headY']
-        self.height = kwargs['height']
-        self.width = kwargs['width']
-        self.color = kwargs['color']
-        self.screenheight = kwargs['screenheight']
-        self.screenwidth = kwargs['screenwidth']
-        self.bodyLen = 2
-        self.speed = 5
+        if "body_len" not in kwargs:
+            self.body_len = 0
+        else:
+            self.body_len = kwargs["body_len"]
+
+        if "difference" in kwargs:
+            self.difference = kwargs["difference"]
+        else:
+            self.difference = 0
+
         self.logs = []
+        self.direction = random.choice([NORTH, SOUTH, EAST, WEST])
 
-        self.move(NORTH)
+        while 1:
+            x, y, self.width, self.height = random.choice(self.grid.grid)
+            self.head_pos = x, y
 
-    def draw(self, window, mode, arg):
-        if mode == COLOR:
-            pygame.draw.rect(window, arg, (self.headX, self.headY, self.width, self.height))
-        elif mode == PIC:
-            window.blit(pygame.transform.scale(pygame.image.load(arg), (self.height, self.width)), (self.headX, self.headY))
+            for _ in range(self.body_len):
+                self.move()
 
-        for f in range(1, self.bodyLen):
-            x, y = self.logs[len(self.logs) - f]
-            pygame.draw.rect(window, self.color, (x, y, self.width, self.height))
+            if not self.check_collision(True):
+                break
 
-    def move(self, direction):
-        self.logs.append([self.headX, self.headY])
+    def draw(self, win):
+        w = self.width
+        h = self.height
+        d = self.direction
 
-        if direction == NORTH:
-            self.headY -= self.height
-        elif direction == SOUTH:
-            self.headY += self.height
-        elif direction == EAST:
-            self.headX += self.width
-        elif direction == WEST:
-            self.headX -= self.width
+        if d in [NORTH, SOUTH]:
+            w += self.difference
+        elif d in [EAST, WEST]:
+            h += self.difference
 
-        if self.headY < 0:
-            self.headY = self.screenheight - self.height
-        if self.headY > (self.screenheight - self.height):
-            self.headY = 0
-        if self.headX < 0:
-            self.headX = self.screenwidth - self.width
-        if self.headX > (self.screenwidth - self.width):
-            self.headX = 0
+        w, h = self.width, self.height
 
-    def handle_food(self, food):
-        if food.pos != None:
-            if food.pos == [self.headX, self.headY]:
-                self.speed += 1
-                self.bodyLen += 1
-                food.generate((self.headX, self.headY), self.bodyLen, self.logs)
-                return True
+        if self.head_type == graphics.COLOR:
+            pygame.draw.rect(win, self.head_arg, (self.head_pos + (w, h)))
+        else:
+            win.blit(pygame.transform.scale(self.head_arg, (w, h)), self.head_pos)
+
+        body_pos = self.get_body_pos(True)
+        for i, ((x, y), d) in enumerate(body_pos):
+            w = self.width
+            h = self.height
+
+            if d in [NORTH, SOUTH]:
+                w += self.difference
+            elif d in [EAST, WEST]:
+                h += self.difference
+
+            if (i + 1) != len(body_pos) and False:
+                d2 = body_pos[i + 1][1]
+                if d != d2 and d != {NORTH:SOUTH, EAST:WEST, WEST:EAST, SOUTH:NORTH}[d2]:
+                    diff = self.difference
+
+                    if str(diff).startswith("-"):
+                        diff = -diff
+
+                    diff = diff // 2
+
+                    if d2 == NORTH:
+                        y -= diff
+                        h += diff
+                    elif d2 == SOUTH:
+                        y += diff
+                        h -= diff
+                    elif d2 == EAST:
+                        x += diff
+                        w -= diff
+                    elif d2 == WEST:
+                        x -= diff
+                        w += diff
+
+
+            w, h = self.width, self.height
+
+            pygame.draw.rect(win, self.body_color, (x, y, w, h))
+
+    def get_body_pos(self, direction=False):
+        if direction:
+            return [self.logs[len(self.logs) - f - 1] for f in range(self.body_len)]
+        else:
+            return [self.logs[len(self.logs) - f - 1][0] for f in range(self.body_len)]
+
+    def check_collision(self, walls=False):
+        x, y = self.head_pos
+
+        if self.head_pos in self.get_body_pos():
+            return True
+
+        if walls \
+                and (((x + self.width) > self.grid.width) or \
+                     ((y + self.height) > self.grid.height) or \
+                     (x < 0) or (y < 0)):
+            return True
 
         return False
 
-    def check_head_collision(self):
-        return [self.headX, self.headY] in [list(self.logs[len(self.logs) - f]) for f in range(1, self.bodyLen)]
+    def check_collision_upon_move(self, direction, walls=False):
+        x, y = self.pos_upon_move(direction)
+        head_pos = x, y
+        logs = self.logs[:]
+        logs.append(head_pos)
+        body_pos = [logs[len(logs) - f - 1][0] for f in range(self.body_len)]
+
+        if head_pos in body_pos:
+            return True
+
+        if walls \
+                and (((x + self.width) > self.grid.width) or \
+                     ((y + self.height) > self.grid.height) or \
+                     (x < 0) or (y < 0)):
+            return True
+
+        return False
+
+    def move(self, collision=False):
+        x, y = self.pos_upon_move(self.direction)
+
+        if not collision:
+            if (x + self.width) > self.grid.width:
+                x = 0
+
+            if (y + self.height) > self.grid.height:
+                y = 0
+
+            if x < 0:
+                x = self.grid.width - self.width
+
+            if y < 0:
+                y = self.grid.height - self.height
+
+        self.logs.append([self.head_pos, self.direction])
+        self.head_pos = x, y
 
     def pos_upon_move(self, direction):
-        headX = self.headX
-        headY = self.headY
+        x, y = self.head_pos
 
         if direction == NORTH:
-            headY -= self.height
+            return x, (y - self.height)
+
         elif direction == SOUTH:
-            headY += self.height
-        elif direction == EAST:
-            headX += self.width
+            return x, (y + self.height)
+
         elif direction == WEST:
-            headX -= self.width
+            return (x - self.width), y
 
-        if headY < 0:
-            headY = self.screenheight - self.height
-        if headY > (self.screenheight - self.height):
-            headY = 0
-        if headX < 0:
-            headX = self.screenwidth - self.width
-        if headX > (self.screenwidth - self.width):
-            headX = 0
-
-        return headX, headY
-
-    def collision_upon_move(self, direction):
-        headX, headY = self.pos_upon_move(direction)
-        return [headX, headY] in [list(self.logs[len(self.logs) - f]) for f in range(1, self.bodyLen)]
-
-    def moves_without_collision(self, direction):
-        iter = 0
-        headX = self.headX
-        headY = self.headY
-
-        while 1:
-            if direction == NORTH:
-                headY -= self.height
-            elif direction == SOUTH:
-                headY += self.height
-            elif direction == EAST:
-                headX += self.width
-            elif direction == WEST:
-                headX -= self.width
-
-            if headY < 0:
-                headY = self.screenheight - self.height
-            if headY > (self.screenheight - self.height):
-                headY = 0
-            if headX < 0:
-                headX = self.screenwidth - self.width
-            if headX > (self.screenwidth - self.width):
-                headX = 0
-
-            if [headX, headY] in [list(self.logs[len(self.logs) - f]) for f in range(1, self.bodyLen)]:
-                return iter
-            else:
-                iter += 1
-
-            if [headX, headY] == [self.headX, self.headY]:
-                return iter
+        elif direction == EAST:
+            return (x + self.width), y

@@ -1,25 +1,21 @@
-import random
 import pygame
+import random
+from directions import *
 
-class Food():
-    def __init__(self, color, height, width, all_pos):
-        self.height = height
-        self.width = width
-        self.color = color
-        self.all_pos = all_pos
-        self.pos = None
+class Food:
+    def __init__(self, *args, **kwargs):
+        self.grid = kwargs["grid"]
+        self.color = kwargs["color"]
+        x, y, self.width, self.height = random.choice(self.grid.grid)
+        self.pos = x, y
 
-    def generate(self, snake_head, snake_len, snake_logs):
-        bodyPos = [list(snake_logs[len(snake_logs) - f]) for f in range(1, snake_len)]
+    def draw(self, win):
+        pygame.draw.rect(win, self.color, (self.pos + (self.width, self.height)))\
 
+    def generate(self, snake):
         while 1:
-            r = random.choice(self.all_pos)
-            if list(r) != list(snake_head) and list(r) not in bodyPos:
+            x, y, _, _ = random.choice(self.grid.grid)
+            if (x, y) not in ([snake.head_pos] + snake.get_body_pos()):
                 break
 
-        self.pos = list(r)
-
-    def draw(self, window):
-        if self.pos != None:
-            x, y = self.pos
-            pygame.draw.rect(window, self.color, (x, y, self.height, self.width))
+        self.pos = x, y

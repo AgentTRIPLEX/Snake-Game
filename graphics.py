@@ -1,0 +1,2 @@
+PIC = 'pic'
+COLOR = 'color'
