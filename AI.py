@@ -42,13 +42,13 @@ def get_nodes(grid, snake, food):
             elif pos in snake.get_body_pos():
                 n.make_barrier()
 
-    return nodes, start, end
+    return nodes, start, end, g2
 
 def get_path(grid, snake, food):
-    nodes, start, end = get_nodes(grid, snake, food)
+    nodes, start, end, g = get_nodes(grid, snake, food)
     path = astar.algorithm(start, end, nodes)
     path = [f.get_pos() for f in path]
-    return [g2[f] for f in path]
+    return [g[f] for f in path]
 
 def get_move(snake, food, grid, hardcore=True):
     i = grid.grid.index(snake.head_pos + (snake.width, snake.height))
@@ -60,10 +60,9 @@ def get_move(snake, food, grid, hardcore=True):
 
     x, y, w, h = grid.grid[i]
     hamiltonian_pos = x, y
+    path = get_path(grid, snake, food)
 
-    if ((snake.body_len < (len(grid.grid) // 10)) or snake.check_collision_upon_move(get_direction(snake.head_pos, hamiltonian_pos))) and (len(get_path(grid, snake, food)) > 0):
-        path = get_path(grid, snake, food)
-        
+    if ((snake.body_len < (len(grid.grid) // 10)) or snake.check_collision_upon_move(get_direction(snake.head_pos, hamiltonian_pos))) and (len(path) > 0):
         if len(path) > 0:
             direction = get_direction(snake.head_pos, path[-1])
         else:
